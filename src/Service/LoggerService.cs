@@ -4,42 +4,57 @@ namespace ghbin.Service
 {
     public class LoggerService
     {
-        public void Log(string text, ConsoleColor foreColor, ConsoleColor backColor) {
+        public void Log(string text, ConsoleColor foreColor, ConsoleColor backColor, bool newLine = true)
+        {
             var prevForeColor = Console.ForegroundColor;
             var prevBackColor = Console.BackgroundColor;
 
             Console.ForegroundColor = foreColor;
             Console.BackgroundColor = backColor;
-            
-            Console.WriteLine(text);
+
+            if (newLine)
+            {
+                Console.WriteLine(text);
+            }
+            else
+            {
+                Console.Write(text);
+            }
 
             Console.ForegroundColor = prevForeColor;
             Console.BackgroundColor = prevBackColor;
         }
 
-        public void Log(string text, ConsoleColor foreColor) {
-            Log(text, foreColor, Console.BackgroundColor);
+        public void Log(string text, ConsoleColor foreColor, bool newLine = true)
+        {
+            Log(text, foreColor, Console.BackgroundColor, newLine);
         }
 
-        public void Log(string text, bool newLine = true) {
-            if(newLine) {
+        public void Log(string text, bool newLine = true)
+        {
+            if (newLine)
+            {
                 Console.WriteLine(text);
             }
-            else {
+            else
+            {
                 Console.Write(text);
             }
         }
 
-        public void Success(string text) {
+        public void Success(string text)
+        {
             Log(text, ConsoleColor.Green);
         }
 
-        public void Error(string text) {
+        public void Error(string text)
+        {
             Log(text, ConsoleColor.Red);
         }
 
-        public void Warn(string text) {
-            Log(text, ConsoleColor.Yellow);
+        public void Warn(string text, bool newLine = true)
+        {
+            Log(text, ConsoleColor.Yellow, newLine: newLine);
         }
     }
 }

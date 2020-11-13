@@ -60,7 +60,8 @@ namespace ghbin
 
         public async Task Install(string owner, string repository)
         {
-            if(Configuration.Bins.Any(b => b.FullName.Equals($"{owner}/{repository}"))) {
+            if (Configuration.Bins.Any(b => b.FullName.Equals($"{owner}/{repository}")))
+            {
                 Logger.Warn($"{owner}/{repository} already installed.");
                 return;
             }
@@ -85,19 +86,27 @@ namespace ghbin
             }
         }
 
-        public void Uninstall(string owner, string repository) {
+        public void Uninstall(string owner, string repository)
+        {
             var binToUninstall = Configuration.Bins.FirstOrDefault(b => b.FullName.Equals($"{owner}/{repository}"));
 
-            if(binToUninstall != null) {
+            if (binToUninstall != null)
+            {
                 Logger.Log($"Uninstalling {owner}/{repository} from {FullGithubBinDirectory}/{owner}/{repository} ...", newLine: false);
                 Configuration.Bins.Remove(binToUninstall);
 
                 var dir = new DirectoryInfo($"{FullGithubBinDirectory}/{owner}/{repository}");
-
-                foreach(var item in dir.GetDirectories()) {
-                    Directory.Delete(item.FullName, true);
+                if (dir.Exists)
+                {
+                    foreach (var item in dir.GetDirectories())
+                    {
+                        Directory.Delete(item.FullName, true);
+                    }
                 }
-
+                else
+                {
+                    Logger.Warn("directory not found. Skipping. ", newLine: false);
+                }
                 SaveConfiguration();
                 Logger.Log($"DONE");
             }
@@ -107,11 +116,30 @@ namespace ghbin
             }
         }
 
-        public async Task<List<UpdateInfo>> CheckForUpdates()
+        public void List()
+        {
+            foreach (var bin in Configuration.Bins)
+            {
+                Logger.Log($"{bin.FullName}:{bin.Tag}");
+            }
+        }
+
+        public void PrintPath()
+        {
+            Logger.Log($"{FullGithubBinDirectory}");
+        }
+
+        public async Task<List<UpdateInfo>> CheckForUpdates(string onlyOwner = null, string onlyRepository = null)
         {
             var updateInfos = new List<UpdateInfo>();
 
-            foreach (var bin in Configuration.Bins)
+            var binsToCheck = Configuration.Bins;
+            if (onlyOwner != null && onlyRepository != null)
+            {
+                binsToCheck = Configuration.Bins.Where(b => b.FullName.Equals($"{onlyOwner}/{onlyRepository}")).ToList();
+            }
+
+            foreach (var bin in binsToCheck)
             {
                 string[] fullName = bin.FullName.Split('/');
                 string owner = fullName[0];
@@ -158,6 +186,12 @@ namespace ghbin
 
                 DownloadService.DownloadRelease(owner, repo, release);
             }
+        }
+
+        public async Task Upgrade(string owner, string repo)
+        {
+            var updateInfos = await CheckForUpdates(owner, repo);
+            await UpgradeAll(updateInfos);
         }
 
         public async Task UpgradeAll(List<UpdateInfo> updateInfos = null)

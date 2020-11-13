@@ -12,7 +12,7 @@ namespace ghbin.Service
         };
         
         public static HttpClient GetClient() {
-            string cred = ""; // Put your Github username here.
+            string cred = "thecatte"; // Put your Github username here.
             string base64 = ToBase64(cred);
 
             var client = new HttpClient();
