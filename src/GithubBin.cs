@@ -85,7 +85,7 @@ namespace ghbin
             }
         }
 
-        public void Uninstall(string owner, string repository, string tagName) {
+        public void Uninstall(string owner, string repository) {
             var binToUninstall = Configuration.Bins.FirstOrDefault(b => b.FullName.Equals($"{owner}/{repository}"));
 
             if(binToUninstall != null) {
