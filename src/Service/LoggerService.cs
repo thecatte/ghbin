@@ -21,8 +21,13 @@ namespace ghbin.Service
             Log(text, foreColor, Console.BackgroundColor);
         }
 
-        public void Log(string text) {
-            Console.WriteLine(text);
+        public void Log(string text, bool newLine = true) {
+            if(newLine) {
+                Console.WriteLine(text);
+            }
+            else {
+                Console.Write(text);
+            }
         }
 
         public void Success(string text) {

@@ -6,6 +6,7 @@ namespace ghbin.Model
     {
         [JsonPropertyName("full_name")]
         public string FullName { get; set; }
+        [JsonPropertyName("tag")]
         public string Tag { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using ghbin.Model;
 using ghbin.Service;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ghbin
 {
@@ -38,12 +39,50 @@ namespace ghbin
 
         private void LoadConfiguration()
         {
+            // TODO First-run config creation.
+            // Now it can easily crash if the file is missing.
             var binFile = File.ReadAllText($"{FullGithubBinDirectory}/{GithubBinFile}");
             Configuration = JsonSerializer.Deserialize<Configuration>(binFile, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
+        }
+
+        private void SaveConfiguration()
+        {
+            string configuration = JsonSerializer.Serialize<Configuration>(Configuration, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            File.WriteAllText($"{FullGithubBinDirectory}/{GithubBinFile}", configuration);
+        }
+
+        public async Task Install(string owner, string repository)
+        {
+            if(Configuration.Bins.Any(b => b.FullName.Equals($"{owner}/{repository}"))) {
+                Logger.Warn($"{owner}/{repository} already installed.");
+                return;
+            }
+
+            try
+            {
+                Logger.Log($"Installing {owner}/{repository}... ", newLine: false);
+                var latestRelease = await ReleaseService.GetLatestRelease(owner, repository);
+                Logger.Log($"{latestRelease.TagName}", newLine: false);
+                Configuration.Bins.Add(new Bin
+                {
+                    FullName = $"{owner}/{repository}",
+                    Tag = latestRelease.TagName
+                });
+
+                SaveConfiguration();
+                Logger.Log($" DONE");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"{owner}/{repository} failed to install. ({ex.Message})");
+            }
         }
 
         public async Task<List<UpdateInfo>> CheckForUpdates()
@@ -63,7 +102,8 @@ namespace ghbin
 
                     if (latestRelease.PublishedAt > installedRelease.PublishedAt)
                     {
-                        updateInfos.Add(new UpdateInfo{
+                        updateInfos.Add(new UpdateInfo
+                        {
                             FullName = bin.FullName,
                             CurrentTag = installedRelease.TagName,
                             LatestTag = latestRelease.TagName
@@ -72,20 +112,22 @@ namespace ghbin
                     }
                     else
                     {
-                        Logger.Log($"{bin.FullName}: no update");
+                        Logger.Log($"{bin.FullName}: {installedRelease.TagName} up-to-date");
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Logger.Error($"Couldn't fetch info for {bin.FullName}.");
+                    Logger.Error($"{bin.FullName}: error while fetching info. ({ex.Message})");
                 }
             }
 
             return updateInfos;
         }
 
-        public async Task DownloadAll() {
-            foreach(var bin in Configuration.Bins) {
+        public async Task DownloadAll()
+        {
+            foreach (var bin in Configuration.Bins)
+            {
                 string[] fullName = bin.FullName.Split('/');
                 string owner = fullName[0];
                 string repo = fullName[1];
@@ -98,21 +140,32 @@ namespace ghbin
 
         public async Task UpgradeAll(List<UpdateInfo> updateInfos = null)
         {
-            if(updateInfos == null) {
+            if (updateInfos == null)
+            {
                 updateInfos = await CheckForUpdates();
+            }
+
+            Logger.Log($"{updateInfos.Count} bins will be upgraded.");
+
+            if (updateInfos.Count == 0)
+            {
+                return;
             }
 
             foreach (var updateInfo in updateInfos)
             {
-                // todo
-                // set tag to newest in bins.json
                 string[] fullName = updateInfo.FullName.Split('/');
                 string owner = fullName[0];
                 string repository = fullName[1];
 
                 var release = await ReleaseService.GetRelease(owner, repository, updateInfo.LatestTag);
                 DownloadService.DownloadRelease(owner, repository, release);
+
+                var bin = Configuration.Bins.FirstOrDefault(b => b.FullName.Equals(updateInfo.FullName));
+                bin.Tag = updateInfo.LatestTag;
             }
+
+            SaveConfiguration();
         }
     }
 }
