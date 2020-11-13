@@ -13,7 +13,6 @@ namespace ghbin.Service
         }
         public void DownloadRelease(Repository repository, Release release) 
         {
-
             foreach(var asset in release.Assets) {
                 using var wc = new WebClient();
                 string binDirectoryPath = $"{GhbinPath}/{repository.FullName}/{release.TagName}";
