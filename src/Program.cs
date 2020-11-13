@@ -62,6 +62,28 @@ namespace ghbin
                 });
             });
 
+            // TODO Download release files after installation.
+            // Also ask which assets to download.
+            app.Command("install", (command) => {
+                command.Description = "Install bin.";
+                command.HelpOption("-?|-h|--help");
+                
+                var whichBinOption = command.Option("-b|--bin", "Which bin to install: \"owner/repository\".", CommandOptionType.SingleValue);
+
+                command.OnExecute(async () => {
+                    if(whichBinOption.HasValue()) {
+                        string whichBinValue = whichBinOption.Value();
+
+                        string[] fullName = whichBinValue.Split('/');
+                        await githubBin.Install(fullName[0], fullName[1]); 
+                    }
+                    else {
+                        command.ShowHelp();
+                    }
+                    return 0;
+                });
+            });
+
             app.Command("uninstall", (command) => {
                 command.Description = "Uninstall bin and remove all associated files.";
                 command.HelpOption("-?|-h|--help");
