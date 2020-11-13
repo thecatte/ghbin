@@ -85,6 +85,28 @@ namespace ghbin
             }
         }
 
+        public void Uninstall(string owner, string repository, string tagName) {
+            var binToUninstall = Configuration.Bins.FirstOrDefault(b => b.FullName.Equals($"{owner}/{repository}"));
+
+            if(binToUninstall != null) {
+                Logger.Log($"Uninstalling {owner}/{repository} from {FullGithubBinDirectory}/{owner}/{repository} ...", newLine: false);
+                Configuration.Bins.Remove(binToUninstall);
+
+                var dir = new DirectoryInfo($"{FullGithubBinDirectory}/{owner}/{repository}");
+
+                foreach(var item in dir.GetDirectories()) {
+                    Directory.Delete(item.FullName, true);
+                }
+
+                SaveConfiguration();
+                Logger.Log($"DONE");
+            }
+            else
+            {
+                Logger.Error($"{owner}/{repository} not found.");
+            }
+        }
+
         public async Task<List<UpdateInfo>> CheckForUpdates()
         {
             var updateInfos = new List<UpdateInfo>();
