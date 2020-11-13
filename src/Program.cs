@@ -15,7 +15,9 @@ namespace ghbin
         static async Task Main(string[] args)
         {
             var githubBin = new GithubBin();
-            await githubBin.CheckForUpdates();
+            var updates = await githubBin.CheckForUpdates();
+            await githubBin.DownloadAll();
+            // await githubBin.UpgradeAll(updates);
         }
     }
 }

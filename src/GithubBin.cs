@@ -4,6 +4,7 @@ using System.Text.Json;
 using ghbin.Model;
 using ghbin.Service;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ghbin
 {
@@ -45,8 +46,10 @@ namespace ghbin
             });
         }
 
-        public async Task CheckForUpdates()
+        public async Task<List<UpdateInfo>> CheckForUpdates()
         {
+            var updateInfos = new List<UpdateInfo>();
+
             foreach (var bin in Configuration.Bins)
             {
                 string[] fullName = bin.FullName.Split('/');
@@ -60,6 +63,11 @@ namespace ghbin
 
                     if (latestRelease.PublishedAt > installedRelease.PublishedAt)
                     {
+                        updateInfos.Add(new UpdateInfo{
+                            FullName = bin.FullName,
+                            CurrentTag = installedRelease.TagName,
+                            LatestTag = latestRelease.TagName
+                        });
                         Logger.Success($"{bin.FullName}: {installedRelease.TagName} -> {latestRelease.TagName}");
                     }
                     else
@@ -71,6 +79,39 @@ namespace ghbin
                 {
                     Logger.Error($"Couldn't fetch info for {bin.FullName}.");
                 }
+            }
+
+            return updateInfos;
+        }
+
+        public async Task DownloadAll() {
+            foreach(var bin in Configuration.Bins) {
+                string[] fullName = bin.FullName.Split('/');
+                string owner = fullName[0];
+                string repo = fullName[1];
+
+                var release = await ReleaseService.GetRelease(owner, repo, bin.Tag);
+
+                DownloadService.DownloadRelease(owner, repo, release);
+            }
+        }
+
+        public async Task UpgradeAll(List<UpdateInfo> updateInfos = null)
+        {
+            if(updateInfos == null) {
+                updateInfos = await CheckForUpdates();
+            }
+
+            foreach (var updateInfo in updateInfos)
+            {
+                // todo
+                // set tag to newest in bins.json
+                string[] fullName = updateInfo.FullName.Split('/');
+                string owner = fullName[0];
+                string repository = fullName[1];
+
+                var release = await ReleaseService.GetRelease(owner, repository, updateInfo.LatestTag);
+                DownloadService.DownloadRelease(owner, repository, release);
             }
         }
     }
