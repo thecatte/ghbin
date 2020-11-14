@@ -39,14 +39,22 @@ namespace ghbin
 
         private void LoadConfiguration()
         {
-            // TODO First-run config creation.
-            // Now it can easily crash if the file is missing.
-            var binFile = File.ReadAllText($"{FullGithubBinDirectory}/{GithubBinFile}");
-            Configuration = JsonSerializer.Deserialize<Configuration>(binFile, new JsonSerializerOptions
+            if (!Directory.Exists($"{FullGithubBinDirectory}"))
             {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+                Directory.CreateDirectory($"{FullGithubBinDirectory}");
+
+                Configuration = new Configuration();
+                SaveConfiguration();
+            }
+            else
+            {
+                var binFile = File.ReadAllText($"{FullGithubBinDirectory}/{GithubBinFile}");
+                Configuration = JsonSerializer.Deserialize<Configuration>(binFile, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+            }
         }
 
         private void SaveConfiguration()

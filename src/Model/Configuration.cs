@@ -7,5 +7,9 @@ namespace ghbin.Model
     {
         [JsonPropertyName("bins")]
         public List<Bin> Bins { get;set; }
+
+        public Configuration() {
+            Bins = new List<Bin>();
+        }
     }
 }
