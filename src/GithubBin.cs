@@ -74,10 +74,11 @@ namespace ghbin
                 return;
             }
 
+            Release latestRelease;
             try
             {
                 Logger.Log($"Installing {owner}/{repository}... ", newLine: false);
-                var latestRelease = await ReleaseService.GetLatestRelease(owner, repository);
+                latestRelease = await ReleaseService.GetLatestRelease(owner, repository);
                 Logger.Log($"{latestRelease.TagName}", newLine: false);
                 Configuration.Bins.Add(new Bin
                 {
@@ -91,6 +92,19 @@ namespace ghbin
             catch (Exception ex)
             {
                 Logger.Error($"{owner}/{repository} failed to install. ({ex.Message})");
+                return;
+            }
+
+            Logger.Log($"{latestRelease.Assets.Count} assets available to download.");
+            foreach (var asset in latestRelease.Assets)
+            {
+                Logger.Log($"Download {asset.Name} (~{asset.Size / 1000000}MB)? [y/N] ");
+                var key = Console.ReadKey();
+                Logger.Log(string.Empty); // newline
+                if (key.KeyChar == 'y' || key.KeyChar == 'Y')
+                {
+                    DownloadService.DownloadAsset(owner, repository, latestRelease.TagName, asset);
+                }
             }
         }
 

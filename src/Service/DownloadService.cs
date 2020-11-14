@@ -14,16 +14,21 @@ namespace ghbin.Service
             Logger = new LoggerService();
         }
 
-        public void DownloadRelease(string owner, string repository, Release release) {
-            foreach(var asset in release.Assets) {
-                using var wc = new WebClient();
-                string binDirectoryPath = $"{GhbinPath}/{owner}/{repository}/{release.TagName}";
+        public void DownloadAsset(string owner, string repository, string tagName, Asset asset) {
+            using var wc = new WebClient();
+                string binDirectoryPath = $"{GhbinPath}/{owner}/{repository}/{tagName}";
                 if(!Directory.Exists(binDirectoryPath)) {
                     Directory.CreateDirectory(binDirectoryPath);
                 }
                 Logger.Log($"Downloading {asset.Name} into {binDirectoryPath} ...", newLine: false);
+                // consider using DownloadFileAsync in the future
                 wc.DownloadFile(asset.BrowserDownloadUrl, $"{binDirectoryPath}/{asset.Name}");
                 Logger.Log("DONE");
+        }
+
+        public void DownloadRelease(string owner, string repository, Release release) {
+            foreach(var asset in release.Assets) {
+                DownloadAsset(owner, repository, release.TagName, asset);
             }
         }
 

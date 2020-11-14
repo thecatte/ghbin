@@ -75,7 +75,7 @@ namespace ghbin
                         string whichBinValue = whichBinOption.Value();
 
                         string[] fullName = whichBinValue.Split('/');
-                        await githubBin.Install(fullName[0], fullName[1]); 
+                        await githubBin.Install(fullName[0], fullName[1]);
                     }
                     else {
                         command.ShowHelp();
